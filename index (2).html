@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stick Dancer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --orange:#d4af37; --green:#d4af37; --greenD:#8a6d1a; --purple:#111; --purpleD:#000; --redD:#000; --ink:#111; }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#0b0b0b;font-family:"Nunito","Trebuchet MS",system-ui,sans-serif;color:var(--ink)}
+  #app{max-width:1900px;margin:0 auto}
+  .stagewrap{position:relative;line-height:0}
+  canvas{display:block;width:100%;height:auto;cursor:pointer}
+  .card{position:absolute;left:1.8%;top:5%;width:46%;background:#fffdfb;border:.28em solid var(--orange);border-radius:1.2em;
+        padding:1.3em 1.6em 1.4em;font-size:1.15vw;line-height:1.3;box-shadow:0 .5em 1.2em rgba(120,40,0,.25)}
+  .card h1{margin:0;font:700 2.4em/1.05 "Fredoka","Arial Rounded MT Bold",system-ui,sans-serif;color:#b8860b;letter-spacing:.02em;-webkit-text-stroke:.03em #b8860b}
+  .status{font-size:1.3em;font-weight:800;margin:.45em 0 .2em}
+  .readout{font:700 1.7em/1 "Fredoka",system-ui,sans-serif;color:#111;min-height:1.1em;margin:.5em 0 .7em;letter-spacing:.04em}
+  .btns{display:flex;gap:.8em;flex-wrap:wrap}
+  .btn{font:700 1.05em "Fredoka","Arial Rounded MT Bold",system-ui,sans-serif;letter-spacing:.04em;color:#111;border:0;border-radius:.7em;padding:.75em 1.3em;cursor:pointer;
+       background:var(--green);box-shadow:0 .28em 0 var(--greenD);text-transform:uppercase;transition:transform .08s,box-shadow .08s}
+  .btn:active{transform:translateY(.2em);box-shadow:0 .08em 0 var(--greenD)}
+  .btn.purple{background:var(--purple);color:#d4af37;box-shadow:0 .28em 0 #8a6d1a}
+  .btn.purple:active{box-shadow:0 .08em 0 #8a6d1a}
+  .btn.red{background:#111;color:#ffd700;box-shadow:0 .28em 0 #8a6d1a}
+  .btn.red:active{box-shadow:0 .08em 0 #8a6d1a}
+  .btn.on{outline:.18em solid #fff}
+  .card.mini .status,.card.mini .readout,.card.mini .hideable{display:none}
+  .card.mini{width:auto}
+  .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.72);line-height:1.3}
+  .overlay.hidden{display:none}
+  .rescard{background:#fffdfb;border:.3em solid var(--orange);border-radius:1.2em;padding:1.4em 2em;font-size:1.15vw;min-width:34em;text-align:center;box-shadow:0 .5em 1.2em rgba(120,40,0,.25)}
+  .rescard h2{margin:0 0 .2em;font:700 2.6em "Fredoka",system-ui,sans-serif;color:#b8860b}
+  .rescard p{margin:.2em 0 .8em;font-size:1.25em;font-weight:800}
+  .rescard table{width:100%;border-collapse:collapse;font-size:1.05em;text-align:left;margin-bottom:1em}
+  .rescard th{font-size:.8em;text-transform:uppercase;letter-spacing:.08em;color:#8a6d1a;padding:.3em .5em;border-bottom:.15em solid #e8d48a}
+  .rescard td{padding:.28em .5em;border-bottom:.1em solid #f0e6c0;font-weight:800}
+  .dotc{display:inline-block;width:1em;height:1em;border-radius:50%;margin-right:.5em;vertical-align:-.12em;border:.1em solid #333}
+  .testcard{background:#fffdfb;border:.28em solid var(--orange);border-radius:1.2em;margin:1.2em;padding:1em 1.4em;font-size:15px}
+  .testcard.hidden{display:none}
+  .testcard h3{margin:0 0 .5em;font:700 1.3em "Fredoka",system-ui,sans-serif;color:#b8860b}
+  .trow{display:flex;gap:.6em;flex-wrap:wrap;align-items:center;margin:.5em 0}
+  .chip{min-width:2.3em;height:2.3em;border-radius:50%;border:.14em solid #222;background:#fff;font:800 1em "Nunito",sans-serif;cursor:pointer}
+  .chip.sel{background:#222;color:#fff}
+  .tbtn{font:700 1em "Fredoka",system-ui,sans-serif;border:0;border-radius:.6em;padding:.6em 1em;color:#ffd700;background:var(--purple);box-shadow:0 .22em 0 #8a6d1a;cursor:pointer}
+  .tbtn.s{background:#fff;color:#111;box-shadow:0 .22em 0 #999}.tbtn.f{background:#d4af37;color:#111;box-shadow:0 .22em 0 #8a6d1a}.tbtn.g{background:#ffd700;color:#111;box-shadow:0 .22em 0 #8a6d1a}
+  .tbtn.o{background:#d4af37;color:#111;box-shadow:0 .22em 0 #8a6d1a}
+  .hint{font-size:.9em;color:#555;margin:.6em 0 0}
+  kbd{background:#f0e6c0;border-radius:.3em;padding:.05em .4em;font-weight:800}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#fffdfb;border:.2em solid var(--orange);padding:.7em 1.2em;border-radius:1em;font-weight:800;display:none;z-index:9}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="stagewrap">
+    <canvas id="stage" width="1600" height="780"></canvas>
+
+    <div class="card" id="card">
+      <h1>Stick Dancer</h1>
+      <div class="status" id="status">Connect Bridge micro:bit</div>
+      <div class="readout" id="readout">--</div>
+      <div class="btns">
+        <button class="btn purple" id="btnToggle">Toggle</button>
+        <button class="btn hideable" id="btnMode">Mode: Easy</button>
+        <button class="btn hideable" id="btnConnect">1. Connect Bridge</button>
+        <button class="btn hideable" id="btnStart">2. Start Show</button>
+        <button class="btn red hideable" id="btnTest">Test</button>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="ovResults">
+      <div class="rescard">
+        <h2>Encore!</h2>
+        <p id="resSummary"></p>
+        <table id="resTable"></table>
+        <button class="btn" id="btnAgain">Dance again</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="testcard hidden" id="test">
+    <h3>Teacher test panel</h3>
+    <div class="trow"><b>Dancer:</b><span id="chips" style="display:contents"></span></div>
+    <div class="trow">
+      <button class="tbtn s" data-mv="S">Shuffle</button>
+      <button class="tbtn f" data-mv="F">Hair flip</button>
+      <button class="tbtn g" data-mv="L">&#9664; Glide</button>
+      <button class="tbtn g" data-mv="R">Glide &#9654;</button>
+    </div>
+    <div class="trow">
+      <button class="tbtn o" id="btnBot">Demo dancers: off</button>
+      <button class="tbtn" id="btnSkip">Skip phase</button>
+      <button class="tbtn" id="btnReset">Reset scores</button>
+      <button class="tbtn" id="btnStop">Stop show</button>
+      <button class="tbtn" id="btnMute">Sound: on</button>
+    </div>
+    <p class="hint">Click a dancer on the stage (or a number above) to pick them, then use the buttons or keys:
+      <kbd>Z</kbd> shuffle, <kbd>X</kbd> hair flip, <kbd>&larr;</kbd> <kbd>&rarr;</kbd> glide. Real dancers join when their micro:bit sends its first move.</p>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  'use strict';
+  // ---------- constants ----------
+  const N = 15;
+  const COLS = ['#ffd700','#ffffff','#e6b800','#f8e7a0','#fff4c2','#c9a227','#ffe066','#f2f2f2','#d4af37','#fff8dc','#ffcc00','#e8e0c8','#b8860b','#fffbe6','#f0c040'];
+  const isLight = c => { const n = parseInt(c.slice(1), 16); return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) > 215; };
+  const LABEL = {S:'SHUFFLE', F:'HAIR FLIP', L:'GLIDE LEFT', R:'GLIDE RIGHT'};
+  const BPM = 120, BEAT = 60 / BPM;
+  // one round = 16 s = 32 beats. The hair-flip target lands on beat 16.
+  const PH = [
+    {id:'shuffle', dur:6, label:'SHUFFLE',    hint:'Shake your micro:bit to build speed!'},
+    {id:'prep',    dur:1, label:'GET READY',  hint:'Hold it flat... flip when the ring closes'},
+    {id:'flip',    dur:2, label:'HAIR FLIP',  hint:'Tip it up (logo up) or press A!'},
+    {id:'glide',   dur:6, label:'HAND GLIDE', hint:'Tilt left or right to stay balanced'},
+    {id:'rest',    dur:1, label:'NICE ROUND!', hint:''}
+  ];
+  const CYCLE = PH.reduce((a, p) => a + p.dur, 0);
+  const ROUNDS = 5, COUNTIN = 3, NUDGE = 0.3;
+  const MODES = {
+    easy:{name:'Easy', perfect:0.6, zone:0.5, drift:0.7, shuffleBase:3},
+    hard:{name:'Hard', perfect:0.3, zone:0.3, drift:1.1, shuffleBase:5}
+  };
+  let mode = 'easy';
+
+  // ---------- state ----------
+  const $ = id => document.getElementById(id);
+  const cv = $('stage'), g = cv.getContext('2d'), W = cv.width, H = cv.height;
+  const X0 = W * 0.23, X1 = W * 0.93, FEET = 467, S = 1.2;
+  const colX = i => X0 + i * (X1 - X0) / (N - 1);
+  let actx = null, master = null, muted = false;
+  let state = 'idle';                // idle | countdown | playing | results
+  let t0 = 0, gt = -COUNTIN, curKey = '', cur = phaseAt(0), prevCur = cur, nextBeat = 0;
+  let players = {}, selected = 1, bot = false, botTimer = null, botState = {};
+  let port = null;
+
+  function newPlayer(id){
+    return {id, col:COLS[id - 1], sShuffle:0, sFlip:0, sGlide:0, shuffles:0, target:4, power:0, speed:0.2,
+            flipped:false, flipRes:'', flipAnim:-1, bal:0, fall:0, waveFalls:0, totalFalls:0,
+            shuffleT:Math.random() * 6, flash:0, msg:'', msgCol:'#fff', msgT:0, lastTxt:''};
+  }
+  const total = p => Math.round(p.sShuffle + p.sFlip + p.sGlide);
+  function resetScores(){ for(const id in players) players[id] = newPlayer(Number(id)); }
+  function phaseAt(tt){
+    const w = Math.floor(tt / CYCLE); let r = tt - w * CYCLE;
+    for(let i = 0; i < PH.length; i++){
+      if(r < PH[i].dur) return {wave:w, idx:i, t:r, ph:PH[i]};
+      r -= PH[i].dur;
+    }
+    return {wave:w, idx:PH.length - 1, t:PH[PH.length - 1].dur, ph:PH[PH.length - 1]};
+  }
+
+  // ---------- audio ----------
+  function ensureAudio(){
+    if(!actx){
+      try{
+        actx = new (window.AudioContext || window.webkitAudioContext)();
+        master = actx.createGain(); master.gain.value = muted ? 0 : 0.8; master.connect(actx.destination);
+      }catch(e){ actx = null; }
+    }
+    if(actx && actx.state === 'suspended') actx.resume();
+  }
+  function tone(freq, t, dur, type, vol, slideTo){
+    if(!actx) return;
+    t = Math.max(t, actx.currentTime);
+    const o = actx.createOscillator(), gn = actx.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+    gn.gain.setValueAtTime(0.0001, t);
+    gn.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+    gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(gn); gn.connect(master); o.start(t); o.stop(t + dur + 0.05);
+  }
+  function noise(t, dur, vol, hp){
+    if(!actx) return;
+    t = Math.max(t, actx.currentTime);
+    const len = Math.max(1, Math.floor(actx.sampleRate * dur)), buf = actx.createBuffer(1, len, actx.sampleRate), d = buf.getChannelData(0);
+    for(let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const s = actx.createBufferSource(); s.buffer = buf;
+    const f = actx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp;
+    const gn = actx.createGain(); gn.gain.value = vol;
+    s.connect(f); f.connect(gn); gn.connect(master); s.start(t);
+  }
+  const ROOTS = [220, 261.6, 196, 293.7];
+  function scheduleBeat(b){
+    if(!actx) return;
+    const bt = b * BEAT, at = actx.currentTime + (bt - gt);
+    if(at < actx.currentTime) return;
+    const id = bt < 0 ? 'count' : phaseAt(bt).ph.id;
+    const root = ROOTS[(((b % 32) + 32) % 32) >> 3];
+    if(id !== 'flip') tone(120, at, 0.16, 'sine', id === 'glide' ? 0.55 : 0.9, 40);
+    if(id === 'flip') tone(root * 4, at, 0.12, 'triangle', 0.12);
+    noise(at + BEAT / 2, 0.05, 0.22, 7000);
+    if(b % 2 === 1 && id !== 'flip') noise(at, 0.12, 0.3, 1800);
+    if(id !== 'count') tone(root / 4, at, BEAT * 0.9, 'sawtooth', 0.16);
+    if(id === 'shuffle') tone(root * 2, at + BEAT * 0.75, 0.1, 'square', 0.05);
+    if(id === 'glide' || id === 'rest') [1, 1.25, 1.5, 2].forEach((m, i) => tone(root * m, at + i * BEAT / 4, BEAT * 0.3, 'triangle', 0.07));
+  }
+  function scheduleBeats(){ if(actx) while(nextBeat * BEAT < gt + 0.3){ scheduleBeat(nextBeat); nextBeat++; } }
+  function sfx(kind){
+    if(!actx) return; const t = actx.currentTime;
+    if(kind === 'shuffle'){ noise(t, 0.06, 0.3, 3500); tone(300, t, 0.06, 'triangle', 0.12); }
+    else if(kind === 'perfect'){ [880, 1175, 1568].forEach((f, i) => tone(f, t + i * 0.05, 0.2, 'triangle', 0.3)); }
+    else if(kind === 'good'){ tone(660, t, 0.18, 'triangle', 0.3); }
+    else if(kind === 'swoosh'){ tone(300, t, 0.25, 'sawtooth', 0.12, 1200); }
+    else if(kind === 'nudge'){ tone(520, t, 0.08, 'sine', 0.12); }
+    else if(kind === 'fall'){ tone(300, t, 0.5, 'sawtooth', 0.2, 60); noise(t, 0.4, 0.25, 600); }
+    else if(kind === 'round'){ [523, 659, 784, 1047].forEach((f, i) => tone(f, t + i * 0.07, 0.25, 'triangle', 0.25)); }
+  }
+
+  // ---------- game flow ----------
+  function startShow(){
+    ensureAudio(); resetScores();
+    state = 'countdown'; t0 = performance.now(); gt = -COUNTIN; curKey = ''; nextBeat = -COUNTIN / BEAT;
+    $('ovResults').classList.add('hidden');
+    if(bot) startBot();
+  }
+  function stopShow(){ state = 'idle'; stopBot(); $('ovResults').classList.add('hidden'); }
+  function finish(){
+    state = 'results'; stopBot();
+    const rows = Object.values(players).sort((a, b) => total(b) - total(a));
+    $('resSummary').textContent = rows.length ? `Star of the stage: Dancer ${rows[0].id} with ${total(rows[0])} points!` : 'No dancers took part.';
+    $('resTable').innerHTML = '<tr><th>#</th><th>Dancer</th><th>Shuffle</th><th>Hair flip</th><th>Hand glide</th><th>Stumbles</th><th>Total</th></tr>' +
+      (rows.length ? rows.map((p, i) => `<tr><td>${i + 1}</td><td><span class="dotc" style="background:${p.col}"></span>Dancer ${p.id}</td><td>${Math.round(p.sShuffle)}</td><td>${Math.round(p.sFlip)}</td><td>${Math.round(p.sGlide)}</td><td>${p.totalFalls}</td><td><b>${total(p)}</b></td></tr>`).join('')
+        : '<tr><td colspan="7">No moves were received.</td></tr>');
+    $('ovResults').classList.remove('hidden');
+  }
+  function say(p, text, col){ p.msg = text; p.msgCol = col || '#fff'; p.msgT = 1; }
+  function startPhase(c){
+    for(const id in players){
+      const p = players[id], m = MODES[mode];
+      if(c.ph.id === 'shuffle'){ p.shuffles = 0; p.target = m.shuffleBase + c.wave; p.flipped = false; p.flipRes = ''; p.flipAnim = -1; p.power = 0; p.bal = 0; p.fall = 0; }
+      if(c.ph.id === 'glide'){ p.bal = (Math.random() < 0.5 ? -1 : 1) * (0.1 + Math.random() * 0.25); p.fall = 0; p.waveFalls = 0; }
+      if(c.ph.id === 'rest') say(p, 'ROUND ' + (c.wave + 1) + ' DONE', '#ffd700');
+    }
+    if(c.ph.id === 'rest') sfx('round');
+    if(c.ph.id === 'flip') sfx('swoosh');
+  }
+  function endPhase(c){
+    for(const id in players){
+      const p = players[id];
+      if(c.ph.id === 'flip' && !p.flipped){ p.flipRes = 'miss'; say(p, 'NO FLIP', '#ffffff'); }
+      if(c.ph.id === 'glide' && p.waveFalls === 0){ p.sGlide += 100; say(p, 'CLEAN +100', '#ffd700'); }
+    }
+  }
+  function handleMove(pid, mv){
+    pid = Number(pid);
+    if(!(pid >= 1 && pid <= N) || !LABEL[mv]) return;
+    if(!players[pid]) players[pid] = newPlayer(pid);
+    const p = players[pid];
+    p.flash = 1; p.lastTxt = LABEL[mv];
+    if(state !== 'playing') return;
+    const c = cur, id = c.ph.id;
+    if(mv === 'S'){
+      if(id !== 'shuffle') return;
+      p.shuffles++; p.shuffleT += 1.6; sfx('shuffle');
+      if(p.shuffles <= p.target){ p.sShuffle += 15; if(p.shuffles === p.target){ p.sShuffle += 40; say(p, 'FULL! +40', '#ffd700'); } }
+      p.power = Math.min(1, p.shuffles / p.target);
+    }else if(mv === 'F'){
+      if(id === 'prep'){ say(p, 'TOO EARLY', '#ffffff'); return; }
+      if(id !== 'flip' || p.flipped) return;
+      const perfect = Math.abs(c.t - 1) <= MODES[mode].perfect;
+      const pts = Math.round((perfect ? 200 : 100) * (0.5 + 0.5 * p.power));
+      p.flipped = true; p.flipAnim = 0; p.sFlip += pts; p.flipRes = perfect ? 'perfect' : 'good';
+      say(p, (perfect ? 'PERFECT +' : 'GOOD +') + pts, perfect ? '#ffd700' : '#ffffff');
+      sfx(perfect ? 'perfect' : 'good');
+    }else{
+      if(id !== 'glide' || gt < p.fall) return;
+      p.bal = Math.max(-1, Math.min(1, p.bal + (mv === 'L' ? -NUDGE : NUDGE)));
+      sfx('nudge');
+      if(Math.abs(p.bal) >= 1) stumble(p);
+    }
+  }
+  function stumble(p){
+    p.fall = gt + 1.3; p.totalFalls++; p.waveFalls++;
+    say(p, 'OOPS!', '#ffffff'); sfx('fall');
+  }
+
+  // ---------- per-frame logic ----------
+  function stepPlayers(dt){
+    const id = cur.ph.id, m = MODES[mode];
+    for(const k in players){
+      const p = players[k];
+      if(state === 'playing' && id === 'glide'){
+        if(p.fall > 0 && gt >= p.fall){ p.fall = 0; p.bal = 0; }
+        if(!(p.fall > 0)){
+          const ph = p.id * 1.7, diff = m.drift * (1 + 0.18 * cur.wave);
+          p.bal += diff * (0.3 * Math.sin(0.9 * gt + ph) + 0.2 * Math.sin(2.3 * gt + 2 * ph)) * dt;
+          if(Math.abs(p.bal) >= 1){ p.bal = Math.sign(p.bal); stumble(p); }
+          else if(Math.abs(p.bal) < m.zone) p.sGlide += dt * 40;
+        }
+      }
+      const targetSpeed = state !== 'playing' ? 0.2 : id === 'shuffle' ? Math.min(1, p.shuffles / p.target) : id === 'rest' ? 0.2 : p.power * 0.7 + 0.25;
+      p.speed += (targetSpeed - p.speed) * Math.min(1, dt * 3);
+      p.shuffleT += dt * (state === 'playing' && id === 'shuffle' ? 2 + 5 * p.speed : 1.5);
+      if(p.flipAnim >= 0 && p.flipAnim < 1.5) p.flipAnim += dt / 0.9;
+      p.msgT = Math.max(0, p.msgT - dt * 0.7);
+      p.flash = Math.max(0, p.flash - dt * 4);
+    }
+  }
+  function update(dt){
+    if(state === 'countdown' || state === 'playing'){
+      gt = (performance.now() - t0) / 1000 - COUNTIN;
+      if(state === 'countdown' && gt >= 0){ state = 'playing'; curKey = ''; }
+      if(state === 'playing'){
+        if(gt >= ROUNDS * CYCLE) finish();
+        else{
+          const c = phaseAt(gt), key = c.wave + ':' + c.idx;
+          if(key !== curKey){ if(curKey) endPhase(prevCur); cur = c; startPhase(c); curKey = key; }
+          cur = prevCur = c;
+        }
+      }
+      scheduleBeats();
+    }
+    stepPlayers(dt);
+    updateCard();
+  }
+  function updateCard(){
+    const joined = Object.keys(players).length;
+    let status, readout = '--';
+    if(state === 'countdown'){ status = 'Get ready...'; readout = String(Math.max(1, Math.ceil(-gt))); }
+    else if(state === 'playing'){ status = `Round ${Math.min(ROUNDS, cur.wave + 1)} of ${ROUNDS} · ${joined} dancer${joined === 1 ? '' : 's'}`; readout = cur.ph.label + '  ' + Math.max(1, Math.ceil(cur.ph.dur - cur.t)); }
+    else if(state === 'results'){ status = 'Show complete!'; readout = 'ENCORE'; }
+    else if(port){ status = joined ? `Bridge connected · ${joined} dancer${joined === 1 ? '' : 's'} joined` : 'Bridge connected · move to join!'; }
+    else status = joined ? `${joined} dancer${joined === 1 ? '' : 's'} joined (no bridge)` : 'Connect Bridge micro:bit';
+    if($('status').textContent !== status) $('status').textContent = status;
+    if($('readout').textContent !== readout) $('readout').textContent = readout;
+  }
+
+  // ---------- drawing ----------
+  function limb(a, b, c){ g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); if(c) g.lineTo(c[0], c[1]); g.stroke(); }
+  function drawFigure(col, pose, p, id, ts){
+    const st = p || {shuffleT:id * 1.3, flipAnim:-1}, q0 = Math.min(1, Math.max(0, st.flipAnim));
+    let hip, sh, head, fl, fr, kl, kr, el, er, hl, hr, hairSway = Math.sin(ts * 3 + id) * 0.15, q = 0;
+    if(pose === 'glide'){
+      const w = Math.sin(ts * 3 + id);
+      fl = [-11, 0]; fr = [11, 0]; kl = [-10, -14]; kr = [10, -14]; hip = [0, -30]; sh = [0, -54]; head = [0, -66];
+      el = [-14, -54 + w * 6]; er = [14, -54 - w * 6]; hl = [-29, -54 - w * 4]; hr = [29, -54 + w * 4];
+      hairSway = Math.sin(ts * 4 + id) * 0.25;
+    }else if(pose === 'pop'){
+      q = q0; const lift = Math.sin(Math.PI * q) * 28;
+      fl = [-8, -lift * 0.9]; fr = [8, -lift * 0.9 - (lift > 2 ? 5 : 0)];
+      kl = [-9, -lift - 14]; kr = [9, -lift - 14]; hip = [0, -lift - 30]; sh = [0, -lift - 56];
+      head = [-3 * Math.sin(Math.PI * q), -lift - 68];
+      el = [-12, -lift - 68]; er = [12, -lift - 68]; hl = [-21, -lift - 82]; hr = [21, -lift - 82];
+    }else{
+      const sw = pose === 'ready' ? Math.sin(ts * 6 + id) * 0.3 : pose === 'idle' ? Math.sin(ts * 2.4 + id) * 0.25 : Math.sin(st.shuffleT);
+      fl = [-10 + sw * 9, 0]; fr = [10 - sw * 9, 0]; kl = [fl[0] * 0.4 + 5, -13]; kr = [fr[0] * 0.4 + 5, -13];
+      hip = [0, -25 + Math.abs(sw) * 2]; sh = [5, -50]; head = [8, -62];
+      el = [sh[0] - 8 - sw * 6, sh[1] + 10]; er = [sh[0] + 9 + sw * 6, sh[1] + 8];
+      hl = [sh[0] - 13 + sw * 9, sh[1] + 20]; hr = [sh[0] + 18 - sw * 9, sh[1] + 14];
+    }
+    g.lineCap = 'round'; g.lineJoin = 'round'; g.lineWidth = 6.5 / S * 1.0; g.strokeStyle = col; g.fillStyle = col;
+    limb(hip, kl, fl); limb(hip, kr, fr); limb(hip, sh); limb(sh, el, hl); limb(sh, er, hr);
+    // ponytail
+    const ang = Math.PI * 1.15 + hairSway + q * Math.PI * 2;
+    g.lineWidth = 5.5;
+    g.beginPath(); g.moveTo(head[0], head[1]);
+    g.quadraticCurveTo(head[0] + Math.cos(ang + 0.7) * 14, head[1] + Math.sin(ang + 0.7) * 14, head[0] + Math.cos(ang) * 22, head[1] + Math.sin(ang) * 22); g.stroke();
+    g.beginPath(); g.arc(head[0], head[1], 10, 0, Math.PI * 2); g.fill();
+    // little white bow so dancers read as K-pop idols
+    g.fillStyle = isLight(col) ? '#111' : '#fff';
+    g.beginPath(); g.arc(head[0] - 2, head[1] - 8, 2.6, 0, Math.PI * 2); g.fill();
+    return head;
+  }
+  function sparkle(x, y, r, col){
+    g.fillStyle = col; g.beginPath();
+    g.moveTo(x, y - r); g.lineTo(x + r * 0.3, y - r * 0.3); g.lineTo(x + r, y); g.lineTo(x + r * 0.3, y + r * 0.3);
+    g.lineTo(x, y + r); g.lineTo(x - r * 0.3, y + r * 0.3); g.lineTo(x - r, y); g.lineTo(x - r * 0.3, y - r * 0.3); g.closePath(); g.fill();
+  }
+  function drawDisco(ts, pulse){
+    const cx = W * 0.865, cy = 150, r = 92;
+    g.strokeStyle = '#d4af37'; g.lineWidth = 3; g.beginPath(); g.moveTo(cx, 0); g.lineTo(cx, cy - r); g.stroke();
+    const glow = g.createRadialGradient(cx, cy, r * 0.8, cx, cy, r * 1.5);
+    glow.addColorStop(0, 'rgba(255,215,0,.35)'); glow.addColorStop(1, 'rgba(255,215,0,0)');
+    g.fillStyle = glow; g.beginPath(); g.arc(cx, cy, r * 1.5, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#d4af37'; g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
+    g.save(); g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.clip();
+    g.strokeStyle = 'rgba(255,255,255,.28)'; g.lineWidth = 2;
+    for(let k = -3; k <= 3; k++){ g.beginPath(); g.ellipse(cx, cy + k * r / 3.6, r, r * 0.12, 0, 0, Math.PI * 2); g.stroke(); }
+    for(let k = 0; k < 6; k++){ const a = ts * 0.6 + k * Math.PI / 6; g.beginPath(); g.ellipse(cx, cy, Math.abs(Math.cos(a)) * r, r, 0, 0, Math.PI * 2); g.stroke(); }
+    g.restore();
+    for(let k = 0; k < 7; k++){
+      const a = k * 0.9 + ts * 0.5, d = r * (1.25 + 0.25 * Math.sin(ts * 2 + k));
+      sparkle(cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.8, 6 + pulse * 6, 'rgba(255,255,255,' + (0.5 + 0.4 * Math.sin(ts * 5 + k)) + ')');
+    }
+  }
+  function draw(ts){
+    const beat = state === 'playing' ? ((gt / BEAT) % 1 + 1) % 1 : (ts * 1.6) % 1, pulse = Math.max(0, 1 - beat);
+    g.fillStyle = '#0b0b0b'; g.fillRect(0, 0, W, H);
+    drawDisco(ts, pulse);
+    g.save(); g.translate(0, 80);   // lower the stage so the title card never covers the dancers
+    // dance floor: same two blues as the sea, with beat-lit tiles
+    g.fillStyle = '#262626'; g.fillRect(0, 405, W, 38);
+    g.fillStyle = '#d4af37'; g.fillRect(0, 443, W, 20);
+    g.fillStyle = '#fffdf5'; g.fillRect(0, 463, W, H);
+    for(let x = -40, k = 0; x < W; x += 80, k++){
+      g.fillStyle = 'rgba(255,255,255,' + ((k % 2) ? 0.05 + 0.1 * pulse : 0.02) + ')'; g.fillRect(x, 405, 80, 58);
+    }
+    // flip ring
+    const ph = state === 'playing' ? cur.ph : null;
+    if(ph && (ph.id === 'prep' || ph.id === 'flip')){
+      const u = (ph.id === 'prep' ? cur.t : 1 + cur.t) - 2, rx = W * 0.72, ry = 160, r = 34 + 38 * Math.abs(u);
+      const inZone = ph.id === 'flip' && Math.abs(u) <= MODES[mode].perfect;
+      g.lineWidth = 9; g.strokeStyle = inZone ? '#ffd700' : '#ffffff'; g.beginPath(); g.arc(rx, ry, r, 0, Math.PI * 2); g.stroke();
+      g.lineWidth = 5; g.strokeStyle = '#d4af37'; g.beginPath(); g.arc(rx, ry, 34, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = '#ffffff'; g.font = '800 22px Fredoka, Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('FLIP', rx, ry);
+    }
+    // dancers
+    const id2 = state === 'playing' ? cur.ph.id : 'idle';
+    for(let i = 0; i < N; i++){
+      const id = i + 1, x = colX(i), p = players[id] || null, col = COLS[i];
+      g.globalAlpha = p ? 1 : 0.42;
+      // spotlight + pad
+      if(p){
+        const sg = g.createRadialGradient(x, FEET, 4, x, FEET, 60 + 30 * p.speed);
+        sg.addColorStop(0, col + '88'); sg.addColorStop(1, col + '00');
+        g.fillStyle = sg; g.fillRect(x - 100, FEET - 100, 200, 130);
+      }
+      g.fillStyle = '#111'; g.strokeStyle = '#d4af37'; g.lineWidth = 2;
+      g.beginPath(); g.ellipse(x, FEET + 4, 45, 7.5, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+      if(p && p.flash > 0){ g.strokeStyle = col; g.globalAlpha = p.flash; g.lineWidth = 4; g.beginPath(); g.ellipse(x, FEET + 4, 50, 10, 0, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1; }
+      // figure
+      let pose = 'idle';
+      if(p){
+        if(id2 === 'shuffle') pose = 'shuffle';
+        else if(id2 === 'prep') pose = 'ready';
+        else if(id2 === 'flip') pose = p.flipAnim >= 0 ? 'pop' : 'ready';
+        else if(id2 === 'glide' || id2 === 'rest') pose = 'glide';
+        else pose = 'idle';
+      }
+      const fallen = p && p.fall > 0 && gt < p.fall;
+      g.save(); g.translate(x, FEET); g.scale(S, S);
+      if(fallen){
+        const u = 1 - (p.fall - gt) / 1.3, side = Math.sign(p.bal || 1);
+        g.translate(side * u * 22, -2); g.rotate(side * Math.min(1.45, u * 3));
+        drawFigure(col, 'ready', p, id, ts);
+      }else{
+        if(pose === 'glide') g.rotate(p.bal * 0.5);
+        drawFigure(col, pose, p, id, ts);
+      }
+      g.restore();
+      // perfect-flip sparkles
+      if(p && p.flipRes === 'perfect' && p.flipAnim >= 0 && p.flipAnim < 1.2 && id2 === 'flip'){
+        for(let k = 0; k < 3; k++) sparkle(x + (k - 1) * 28, FEET - 110 - k * 8 - p.flipAnim * 14, 7, k % 2 ? '#ffd700' : '#ffffff');
+      }
+      // number badge
+      g.globalAlpha = p ? 1 : 0.55;
+      g.fillStyle = '#fff'; g.strokeStyle = id === selected ? '#ffd700' : '#d4af37'; g.lineWidth = id === selected ? 6 : 3;
+      g.beginPath(); g.arc(x, 322, 17, 0, Math.PI * 2); g.fill(); g.stroke();
+      g.fillStyle = '#111'; g.font = '800 ' + (id > 9 ? 15 : 18) + 'px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(id, x, 323);
+      g.globalAlpha = 1;
+      // message above badge
+      if(p && p.msgT > 0){
+        g.globalAlpha = Math.min(1, p.msgT * 1.6); g.font = '800 12px Nunito, sans-serif';
+        const my = 296 - (id % 2) * 15 - (1 - p.msgT) * 8;
+        g.strokeStyle = '#000'; g.lineWidth = 4; g.strokeText(p.msg, x, my); g.fillStyle = p.msgCol; g.fillText(p.msg, x, my); g.globalAlpha = 1;
+      }
+      // scoreboard under the floor
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillStyle = p ? '#111' : '#bbb'; g.font = '800 22px Nunito, sans-serif'; g.fillText(p ? total(p) : '--', x, 515);
+      const mw = 56, mx = x - mw / 2, my2 = 538;
+      g.fillStyle = '#fff'; g.strokeStyle = '#b8860b'; g.lineWidth = 2; g.fillRect(mx, my2, mw, 10); g.strokeRect(mx, my2, mw, 10);
+      if(p){
+        if(id2 === 'shuffle'){ g.fillStyle = '#d4af37'; g.fillRect(mx, my2, mw * Math.min(1, p.shuffles / p.target), 10); }
+        else if(id2 === 'glide'){
+          const z = MODES[mode].zone; g.fillStyle = 'rgba(212,175,55,.45)'; g.fillRect(mx + mw * (0.5 - z / 2), my2, mw * z, 10);
+          g.fillStyle = Math.abs(p.bal) < z ? '#b8860b' : '#111'; g.beginPath(); g.arc(mx + mw * (0.5 + p.bal / 2), my2 + 5, 6, 0, Math.PI * 2); g.fill();
+        }else if(id2 === 'prep' || id2 === 'flip'){
+          if(p.flipRes){ g.fillStyle = p.flipRes === 'perfect' ? '#d4af37' : p.flipRes === 'good' ? '#8a6d1a' : '#111'; g.fillRect(mx, my2, mw, 10); }
+        }
+      }
+      g.fillStyle = '#777'; g.font = '700 11px Nunito, sans-serif';
+      g.fillText(p ? (p.flipRes && (id2 === 'prep' || id2 === 'flip') ? p.flipRes.toUpperCase() : p.lastTxt || 'ready') : '', x, 562);
+    }
+    g.globalAlpha = 1;
+    // phase banner
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    if(ph){
+      g.fillStyle = '#b8860b'; g.font = '700 40px Fredoka, Nunito, sans-serif'; g.fillText(ph.label, W / 2, 616);
+      g.fillStyle = '#444'; g.font = '800 20px Nunito, sans-serif'; g.fillText(ph.hint, W / 2, 652);
+      g.fillStyle = '#eee8d0'; g.fillRect(W / 2 - 400, 676, 800, 9);
+      g.fillStyle = '#d4af37'; g.fillRect(W / 2 - 400, 676, 800 * Math.min(1, cur.t / ph.dur), 9);
+    }else{
+      g.fillStyle = '#444'; g.font = '800 22px Nunito, sans-serif';
+      g.fillText(state === 'countdown' ? 'Get ready...' : 'Dancers join when their micro:bit sends a move', W / 2, 630);
+    }
+    // selected marker
+    g.fillStyle = '#ffd700'; g.beginPath(); g.moveTo(colX(selected - 1), 346); g.lineTo(colX(selected - 1) - 6, 358); g.lineTo(colX(selected - 1) + 6, 358); g.fill();
+    g.restore();
+  }
+  let last = performance.now();
+  function frame(now){
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    update(dt); draw(now / 1000);
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- test panel, keyboard, selection ----------
+  function select(id){
+    selected = id;
+    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('sel', Number(c.dataset.id) === id));
+  }
+  for(let i = 1; i <= N; i++){
+    const b = document.createElement('button'); b.className = 'chip'; b.dataset.id = i; b.textContent = i;
+    b.addEventListener('click', () => select(i)); $('chips').appendChild(b);
+  }
+  document.querySelectorAll('[data-mv]').forEach(b => b.addEventListener('click', () => { ensureAudio(); handleMove(selected, b.dataset.mv); }));
+  cv.addEventListener('click', e => {
+    const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) * W / r.width, y = (e.clientY - r.top) * H / r.height - 80;
+    if(y < 280 || y > 560) return;
+    const i = Math.round((x - X0) / ((X1 - X0) / (N - 1)));
+    if(i >= 0 && i < N && Math.abs(x - colX(i)) < 42) select(i + 1);
+  });
+  window.addEventListener('keydown', e => {
+    if(e.repeat) return;
+    const m = {z:'S', x:'F', ArrowLeft:'L', ArrowRight:'R'}[e.key.length === 1 ? e.key.toLowerCase() : e.key];
+    if(m){ e.preventDefault(); ensureAudio(); handleMove(selected, m); }
+  });
+  select(1);
+
+  // ---------- demo dancers ----------
+  function startBot(){
+    stopBot(); botState = {};
+    botTimer = setInterval(() => {
+      if(state !== 'playing') return;
+      const id = cur.ph.id;
+      for(let k = 1; k <= N; k++){
+        const skill = 0.45 + 0.5 * ((k * 37) % 10) / 10;
+        const st = botState[k] || (botState[k] = {next:Math.random() * 0.4, flipWave:-1}), p = players[k];
+        if(id === 'shuffle' && gt >= st.next){ if(Math.random() < 0.4 + 0.6 * skill) handleMove(k, 'S'); st.next = gt + 0.5 + Math.random() * 0.2; }
+        else if(id === 'flip' && st.flipWave !== cur.wave){
+          const err = (Math.random() - 0.5) * (1.9 - 1.5 * skill);
+          if(cur.t >= 1 + err){ st.flipWave = cur.wave; if(Math.random() < 0.55 + 0.45 * skill) handleMove(k, 'F'); }
+        }else if(id === 'glide' && p && gt >= st.next){
+          const th = 0.15 + (1 - skill) * 0.3;
+          if(p.bal > th) handleMove(k, 'L'); else if(p.bal < -th) handleMove(k, 'R');
+          st.next = gt + 0.5;
+        }
+      }
+    }, 50);
+  }
+  function stopBot(){ if(botTimer){ clearInterval(botTimer); botTimer = null; } }
+
+  // ---------- Web Serial ----------
+  let reader = null, keepReading = false;
+  const LINE_RE = /^P?(\d{1,2})\s*[,:]\s*([SFLR])\s*$/i;
+  function handleLine(line){
+    line = line.trim(); if(!line) return;
+    const m = LINE_RE.exec(line);
+    if(m) handleMove(m[1], m[2].toUpperCase());
+  }
+  async function connect(){
+    if(!('serial' in navigator)){ toast('Web Serial needs Chrome or Edge on a computer. Use TEST to try the game without micro:bits.'); return; }
+    try{
+      ensureAudio();
+      port = await navigator.serial.requestPort();
+      await port.open({baudRate:115200});
+      keepReading = true;
+      $('btnConnect').textContent = 'Bridge connected ✓';
+      readLoop();
+    }catch(err){
+      port = null;
+      if(err && err.name !== 'NotFoundError') toast('Could not connect: ' + err.message);
+    }
+  }
+  async function readLoop(){
+    const decoder = new TextDecoder(); let buf = '';
+    while(port && port.readable && keepReading){
+      reader = port.readable.getReader();
+      try{
+        while(true){
+          const {value, done} = await reader.read();
+          if(done) break;
+          buf += decoder.decode(value, {stream:true});
+          const parts = buf.split('\n');      // a real newline, not the two characters backslash and n
+          buf = parts.pop();
+          parts.forEach(handleLine);
+        }
+      }catch(e){ /* unplugged or closed */ }
+      finally{ reader.releaseLock(); }
+    }
+  }
+  async function disconnect(){
+    keepReading = false;
+    try{ if(reader) await reader.cancel(); }catch(e){}
+    try{ if(port) await port.close(); }catch(e){}
+    port = null; $('btnConnect').textContent = '1. Connect Bridge';
+  }
+  window.addEventListener('beforeunload', () => { try{ port && port.close(); }catch(e){} });
+
+  // ---------- UI wiring ----------
+  function toast(msg){
+    const t = $('toast'); t.textContent = msg; t.style.display = 'block';
+    clearTimeout(toast._t); toast._t = setTimeout(() => t.style.display = 'none', 4000);
+  }
+  $('btnToggle').addEventListener('click', () => $('card').classList.toggle('mini'));
+  $('btnMode').addEventListener('click', () => {
+    mode = mode === 'easy' ? 'hard' : 'easy';
+    $('btnMode').textContent = 'Mode: ' + MODES[mode].name; $('btnMode').classList.toggle('red', mode === 'hard');
+  });
+  $('btnConnect').addEventListener('click', () => port ? disconnect() : connect());
+  $('btnStart').addEventListener('click', () => { if(state === 'countdown' || state === 'playing') return; startShow(); });
+  $('btnAgain').addEventListener('click', startShow);
+  $('btnTest').addEventListener('click', () => { $('test').classList.toggle('hidden'); $('btnTest').classList.toggle('on'); });
+  $('btnStop').addEventListener('click', stopShow);
+  $('btnReset').addEventListener('click', () => { resetScores(); toast('Scores reset'); });
+  $('btnSkip').addEventListener('click', () => { if(state === 'playing') t0 -= (cur.ph.dur - cur.t) * 1000 + 20; });
+  $('btnBot').addEventListener('click', () => {
+    bot = !bot; $('btnBot').textContent = 'Demo dancers: ' + (bot ? 'on' : 'off');
+    if(bot){ for(let k = 1; k <= N; k++) if(!players[k]) players[k] = newPlayer(k); if(state === 'playing') startBot(); } else stopBot();
+  });
+  $('btnMute').addEventListener('click', () => {
+    muted = !muted; $('btnMute').textContent = 'Sound: ' + (muted ? 'off' : 'on'); if(master) master.gain.value = muted ? 0 : 0.8;
+  });
+  window.__kpop = {handleMove, get state(){ return state; }, get cur(){ return cur; }, players:() => players};
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
